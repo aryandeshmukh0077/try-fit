@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="description"
+    content="FitVision AI is a browser-based virtual try-on and intelligent body measurement platform powered by MediaPipe Pose."
+  >
+  <title>FitVision AI | Virtual Try-On & Body Measurement</title>
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <div class="app-loader" id="appLoader" aria-live="polite">
+    <div class="loader-card">
+      <span class="loader-kicker">FitVision AI</span>
+      <h1>Preparing body scan intelligence</h1>
+      <div class="progress-track" aria-label="Application loading progress">
+        <span class="progress-bar"></span>
+      </div>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="FitVision AI home">
+      <span class="brand-mark">FV</span>
+      <span>
+        <strong>FitVision AI</strong>
+        <small>Virtual Try-On Platform</small>
+      </span>
+    </a>
+
+    <nav class="main-nav" aria-label="Primary navigation">
+      <a href="#scanner">Scanner</a>
+      <a href="#analytics">Analytics</a>
+      <a href="#stylist">AI Stylist</a>
+      <a href="#shopping">Shop</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="icon-button" type="button" id="themeToggle" aria-label="Toggle theme">Theme</button>
+      <button class="primary-button" type="button" id="startScanButton">Start Scan</button>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero-section" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <p class="eyebrow">AI Powered Virtual Try-On & Intelligent Body Measurement Platform</p>
+        <h1 id="heroTitle">FitVision AI</h1>
+        <p>
+          A browser-based fashion technology dashboard for live pose tracking,
+          estimated measurements, size guidance, and virtual outfit previews.
+        </p>
+        <div class="hero-actions" aria-label="Primary actions">
+          <a class="primary-button" href="#scanner">Open Scanner</a>
+          <button class="secondary-button" type="button" id="downloadReportButton">Download Report</button>
+        </div>
+      </div>
+
+      <div class="hero-metrics" aria-label="Platform highlights">
+        <article>
+          <span>Pose Model</span>
+          <strong>MediaPipe</strong>
+        </article>
+        <article>
+          <span>Target FPS</span>
+          <strong>30</strong>
+        </article>
+        <article>
+          <span>Try-On Mode</span>
+          <strong>3D Ready</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-layout" id="scanner" aria-label="FitVision AI scanner dashboard">
+      <div class="scanner-panel panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Live Camera</p>
+            <h2>Body Tracking Scanner</h2>
+          </div>
+          <span class="status-pill" id="cameraStatus">Camera initializing</span>
+        </div>
+
+        <div class="wrap camera-stage">
+          <video class="input_video" autoplay playsinline muted></video>
+          <canvas class="output_canvas" width="640" height="480"></canvas>
+          <div class="scan-guide" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+
+        <div class="result-card">
+          <p class="eyebrow">Current Recommendation</p>
+          <div id="result">Waiting for camera...</div>
+        </div>
+      </div>
+
+      <aside class="panel ai-status-panel" aria-labelledby="aiStatusTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">AI Assistant</p>
+            <h2 id="aiStatusTitle">Live Status</h2>
+          </div>
+        </div>
+        <ul class="status-list">
+          <li><span class="status-dot"></span><span>Camera Ready</span></li>
+          <li><span class="status-dot"></span><span>Detecting Body</span></li>
+          <li><span class="status-dot"></span><span>Tracking Shoulders</span></li>
+          <li><span class="status-dot"></span><span>Measuring</span></li>
+          <li><span class="status-dot"></span><span>Loading Shirt</span></li>
+          <li><span class="status-dot"></span><span>Scan Complete</span></li>
+        </ul>
+      </aside>
+
+      <aside class="panel measurements-panel" id="analytics" aria-labelledby="measurementsTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Estimated Measurements</p>
+            <h2 id="measurementsTitle">Live Analytics</h2>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <article><span>Shoulder Width</span><strong id="metricShoulder">--</strong></article>
+          <article><span>Chest Width</span><strong id="metricChest">--</strong></article>
+          <article><span>Waist Width</span><strong id="metricWaist">--</strong></article>
+          <article><span>Hip Width</span><strong id="metricHip">--</strong></article>
+          <article><span>Height</span><strong id="metricHeight">--</strong></article>
+          <article><span>Body Type</span><strong id="metricBodyType">--</strong></article>
+          <article><span>Confidence</span><strong id="metricConfidence">--</strong></article>
+          <article><span>FPS</span><strong id="metricFps">--</strong></article>
+        </div>
+      </aside>
+
+      <aside class="panel settings-panel" aria-labelledby="settingsTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Controls</p>
+            <h2 id="settingsTitle">Settings</h2>
+          </div>
+        </div>
+        <div class="settings-grid">
+          <label><input type="checkbox" id="skeletonToggle" checked> Skeleton</label>
+          <label><input type="checkbox" id="measurementToggle" checked> Measurements</label>
+          <label><input type="checkbox" id="tryOnToggle" checked> Virtual Try-On</label>
+          <label><input type="checkbox" id="voiceToggle"> Voice</label>
+          <label><input type="checkbox" id="fpsToggle" checked> FPS</label>
+          <label>
+            Camera
+            <select id="cameraSelect">
+              <option>Default camera</option>
+            </select>
+          </label>
+          <label>
+            Resolution
+            <select id="resolutionSelect">
+              <option value="640x480">640 x 480</option>
+              <option value="1280x720">1280 x 720</option>
+            </select>
+          </label>
+        </div>
+      </aside>
+    </section>
+
+    <section class="tryon-section panel" aria-labelledby="tryOnTitle">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">3D Virtual Try-On</p>
+          <h2 id="tryOnTitle">Shirt Preview Studio</h2>
+        </div>
+        <span class="status-pill">GLB ready</span>
+      </div>
+      <div class="tryon-grid">
+        <div class="tryon-preview" id="tryOnPreview" aria-label="3D shirt preview placeholder"></div>
+        <div class="wardrobe-controls">
+          <label>
+            Shirt
+            <select id="shirtSelect">
+              <option value="classic">Classic Fit Shirt</option>
+              <option value="streetwear">Streetwear Overshirt</option>
+              <option value="oxford">Formal Oxford</option>
+            </select>
+          </label>
+          <label>
+            Color
+            <select id="shirtColorSelect">
+              <option value="midnight">Midnight Black</option>
+              <option value="electric">Electric Blue</option>
+              <option value="white">Soft White</option>
+            </select>
+          </label>
+          <label>
+            Texture
+            <select id="shirtTextureSelect">
+              <option value="cotton">Cotton</option>
+              <option value="denim">Denim</option>
+              <option value="knit">Performance Knit</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel stylist-panel" id="stylist" aria-labelledby="stylistTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">AI Stylist</p>
+            <h2 id="stylistTitle">Outfit Guidance</h2>
+          </div>
+        </div>
+        <div class="stylist-form">
+          <label>
+            Occasion
+            <select id="occasionSelect">
+              <option>Casual</option>
+              <option>Gym</option>
+              <option>Office</option>
+              <option>Party</option>
+              <option>Wedding</option>
+              <option>Travel</option>
+              <option>Streetwear</option>
+            </select>
+          </label>
+          <label>
+            Budget
+            <select id="budgetSelect">
+              <option>Value</option>
+              <option>Mid-range</option>
+              <option>Premium</option>
+            </select>
+          </label>
+        </div>
+        <div class="stylist-output" id="stylistOutput">
+          Stand straight in frame to generate style recommendations.
+        </div>
+      </div>
+
+      <div class="panel shopping-panel" id="shopping" aria-labelledby="shoppingTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Shopping</p>
+            <h2 id="shoppingTitle">Recommended Products</h2>
+          </div>
+        </div>
+        <div class="product-grid">
+          <article class="product-card">
+            <div class="product-image" aria-hidden="true"></div>
+            <h3>AeroFit Performance Tee</h3>
+            <p>Brand: FitVision Studio</p>
+            <p>Price: $39</p>
+            <p>Rating: 4.7</p>
+            <p>Sizes: S, M, L, XL, 2XL</p>
+          </article>
+          <article class="product-card">
+            <div class="product-image" aria-hidden="true"></div>
+            <h3>Urban Layer Overshirt</h3>
+            <p>Brand: Northline</p>
+            <p>Price: $64</p>
+            <p>Rating: 4.5</p>
+            <p>Sizes: M, L, XL, 2XL, 3XL</p>
+          </article>
+          <article class="product-card">
+            <div class="product-image" aria-hidden="true"></div>
+            <h3>Executive Stretch Oxford</h3>
+            <p>Brand: TailorGrid</p>
+            <p>Price: $79</p>
+            <p>Rating: 4.8</p>
+            <p>Sizes: S, M, L, XL, 2XL, 3XL</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel export-panel" aria-labelledby="exportTitle">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Export</p>
+          <h2 id="exportTitle">Scan History & Reports</h2>
+        </div>
+      </div>
+      <div class="export-actions">
+        <button type="button" id="screenshotButton">Download Screenshot</button>
+        <button type="button" id="measurementReportButton">Download Measurement Report</button>
+        <button type="button" id="pdfButton">Download PDF</button>
+        <button type="button" id="saveHistoryButton">Save Scan History</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>FitVision AI estimates body measurements using browser-based pose landmarks. Results are approximate and not a substitute for professional tailoring.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
